@@ -1,5 +1,5 @@
 #include "heap.h"
-#include "queue.h"
+#include "list.h"
 #include <ctype.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -8,42 +8,32 @@
 
 typedef struct {
   char *nomTarea;
-  Queue *tareasPrecedentes;
+  int prioridad;
+  List *tareasPrecedentes;
   bool completa;
-} Tarea;//Es el (void *data) que utilizaran las estructuras
+} Nodo;//Es el (void *data) dentro del nodo de la lista enlazada
 
-bool buscarTarea(Heap *monTareas, char *nomTarea){
-  Heap *heapAux = monTareas;
-  Tarea *tareaAux = NULL;
+typedef struct {
+  int numTareas;
+  Nodo *nodos;
+} Grafo;
+
+Nodo *crearNodo(char *data, int prio) {
   
-  do {
-    tareaAux = (Tarea*)heap_top(monTareas);
-    if (strcmp(tareaAux->nomTarea,nomTarea) == 0){
-      free(tareaAux);
-      free(heapAux);
-      return true;
-    }
-    heap_pop(heapAux);
-  }while(tareaAux != NULL);
-
-  free(tareaAux);
-  free(heapAux);
-  return false;
-}
-
-Tarea *crearTarea(char *nombreTarea) {
-  
-  Tarea *nuevo = (Tarea *)malloc(sizeof(Tarea));
+  Nodo *nuevo = (Nodo *)malloc(sizeof(Nodo));
   if (nuevo == NULL)exit(EXIT_FAILURE);
-  nuevo->nomTarea = malloc(strlen(nombreTarea) + 1);
+  nuevo->nomTarea = malloc(strlen(data) + 1);
   if (nuevo->nomTarea == NULL)exit(EXIT_FAILURE);
   
-  strcpy(nuevo->nomTarea, nombreTarea);
+  strcpy(nuevo->nomTarea, data);
+  nuevo->prioridad = prio;
   nuevo->tareasPrecedentes = createList();
   nuevo->completa = false;
   
   return nuevo;
 }
+
+Grafo *crearGrafo(int numTareas) { return NULL; }
 
 void menu(int *opcion) {
   printf("\nElija una opcion para continuar:\n");
@@ -66,7 +56,7 @@ void menu(int *opcion) {
   }
 }
 
-void agregarTarea(Heap *monTareas) {
+void agregarTarea(List *tareaSinOrden) {
   char tareaAux[101];
   int prioAux;
 
@@ -76,14 +66,17 @@ void agregarTarea(Heap *monTareas) {
   printf("Ingrese la prioridad de la tarea\n");
   scanf("%d", &prioAux);
 
-  Tarea *tarea = crearTarea(tareaAux);
-  heap_push(monTareas, tarea, prioAux);
-  
+  Nodo *tarea = crearNodo(tareaAux, prioAux);
+  pushFront(tareaSinOrden, tarea);
   return;
 }
 
-void agregarPrecedencia(Heap *monTareas) {
+void agregarPrecedencia(List *tareasSinOrden) {
   char tarea1[101], tarea2[101];
+  bool flag1 = false;
+  bool flag2 = false;
+  Nodo *tareaAux1 = firstList(tareasSinOrden);
+  Nodo *tareaAux2 = firstList(tareasSinOrden);
   
   printf("La tarea1 se debe realizar antes que la tarea2\n");
   
@@ -91,35 +84,50 @@ void agregarPrecedencia(Heap *monTareas) {
     printf("Ingrese el nombre de la tarea: ");
     scanf("%s", tarea1);
     printf("\n");
+    tareaAux1 = firstList(tareasSinOrden);
+
+    while (tareaAux1 != NULL) {
+      if (strcmp(tareaAux1->nomTarea, tarea1) == 0) {
+        flag1 = true;
+        break;
+      }
+      tareaAux1 = nextList(tareasSinOrden);
+    }
   
-    if (!buscarTarea(monTareas, tarea1)) {
+    if (!flag1) {
       printf("El nombre de tarea ingresado no es válido. Por favor, intente nuevamente.\n");
     }
-    else break;
-  } while (true);//Verificar que el nombre exista
+  } while (!flag1);
 
   do {
     printf("Ingrese el nombre de la tarea2: ");
     scanf("%s", tarea2);
     printf("\n");
+    tareaAux2 = firstList(tareasSinOrden);
 
-    if (!buscarTarea(monTareas, tarea2) || strcmp(tarea1, tarea2) == 0) {
+    while (tareaAux2 != NULL) {
+      if (strcmp(tareaAux2->nomTarea, tarea2) == 0 && strcmp(tarea1, tarea2) != 0) {
+        flag2 = true;
+        break;
+      }
+      tareaAux2 = nextList(tareasSinOrden);
+    }
+  
+    if (!flag2) {
       printf("El nombre de tarea ingresado no es válido. Por favor, intente nuevamente.\n");
     }
-  } while (true);//Verificar que el nombre exista y no sea igual
+  } while (!flag2);
 
-  
-  
+  pushFront(tareaAux2->tareasPrecedentes, tarea1);
 }
 
 void mostrarTareas() {}
 
 int main() {
   List *tareasPorHacer = createList();
-  Queue *tareasOrdenadas = queue_create();
-  Heap *monTareas = createHeap();
-  
-  if (tareasPorHacer == NULL || tareasOrdenadas == NULL || monTareas == NULL) {
+  List *tareasOrdenadas = createList();
+
+  if (tareasPorHacer == NULL || tareasOrdenadas == NULL) {
     printf("ERROR DE MEMORIA");
     exit(EXIT_FAILURE);
   }
@@ -129,13 +137,13 @@ int main() {
     int opcion;
     printf("Ingrese la opcion que desee realizar:\n");
     menu(&opcion);
-    
+
     switch (opcion) {
     case 1:
-      agregarTarea(monTareas);
+      agregarTarea(tareasPorHacer);
       break;
     case 2:
-      agregarPrecedencia(monTareas);
+      agregarPrecedencia(tareasPorHacer);
       break;
     case 3:
       break;
@@ -145,8 +153,6 @@ int main() {
       exit(EXIT_SUCCESS);
       break;
     }
-  
-    
   }
   return (EXIT_SUCCESS);
 }

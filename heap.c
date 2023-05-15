@@ -89,3 +89,11 @@ Heap* createHeap(){
   heap->capac = 3;
   return heap;
 }
+
+int heap_size(Heap* pq){
+  return pq->size;
+}
+
+int heap_capac(Heap* pq){
+  return pq->capac;
+}
