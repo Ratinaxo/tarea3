@@ -86,7 +86,7 @@ Heap* createHeap(){
   }
 
   heap->size = 0;
-  heap->capac = 6;
+  heap->capac = 3;
   return heap;
 }
 

@@ -10,25 +10,31 @@ typedef struct {
   char *nomTarea;
   Queue *tareasPrecedentes;
   bool completa;
+  int prioridad;
 } Tarea;//Es el (void *data) que utilizaran las estructuras
 
 Tarea *buscarTarea(Heap *monTareas, char *nomTarea){
-  Heap *monAux = monTareas;
+  Heap *monAux = createHeap();
   Tarea *tareaAux = NULL;
   
-  while (true) {
-    tareaAux = (Tarea*)heap_top(monAux);
-    if (tareaAux == NULL) {
-      return NULL;
-    }
-    if (strcmp(tareaAux->nomTarea, nomTarea) == 0) {
-      return tareaAux;
-    }
+ while (heap_size(monTareas) > 0){
+   tareaAux =heap_top(monTareas);
+   if (strcmp(tareaAux->nomTarea, nomTarea) == 0)break;
+   heap_push(monAux, tareaAux, tareaAux->prioridad);
+   heap_pop(monTareas);
+ }
+  while (heap_size(monAux) > 0){
+    Tarea *tarea = heap_top(monAux);
+    heap_push(monTareas, tarea, tarea->prioridad);
     heap_pop(monAux);
   }
+  
+  free(monAux);
+  if (tareaAux == NULL)return NULL;
+  else return tareaAux;
 }
 
-Tarea *crearTarea(char *nombreTarea) {
+Tarea *crearTarea(char *nombreTarea, int prioridad) {
   
   Tarea *nuevo = (Tarea *)malloc(sizeof(Tarea));
   if (nuevo == NULL)exit(EXIT_FAILURE);
@@ -38,7 +44,7 @@ Tarea *crearTarea(char *nombreTarea) {
   strcpy(nuevo->nomTarea, nombreTarea);
   nuevo->tareasPrecedentes = NULL;
   nuevo->completa = false;
-  
+  nuevo->prioridad = prioridad;
   return nuevo;
 }
 
@@ -75,9 +81,8 @@ void agregarTarea(Heap *monTareas) {
   
   printf("Ingrese la prioridad de la tarea: ");
   scanf("%d", &prioAux);
-  printf("");
 
-  Tarea *tarea = crearTarea(tareaAux);
+  Tarea *tarea = crearTarea(tareaAux, prioAux);
   heap_push(monTareas, tarea, prioAux);
 
   return;
@@ -102,9 +107,12 @@ void agregarPrecedencia(Heap *monTareas) {
     printf("Ingrese el nombre de la tarea2: ");
     scanf("%s", tarea2);
     printf("\n");
+
+    nodoTarea = buscarTarea(monTareas, tarea2);
     
-    if (buscarTarea(monTareas, tarea2) == NULL || strcmp(tarea1, tarea2) == 0) {//ERROR DE SEGMENTACION ACA
-      
+    if (nodoTarea == NULL || strcmp(tarea1, tarea2) == 0) {//ERROR DE SEGMENTACION ACA
+      if (nodoTarea == NULL)printf("El nodo es NULL\n");
+      if (strcmp(tarea1, tarea2) == 0)printf("Las tareas son iguales\n");
       printf("El nombre de tarea ingresado no es valido. Por favor, intente nuevamente.\n");
     }
     else { 
@@ -112,15 +120,28 @@ void agregarPrecedencia(Heap *monTareas) {
     }
   } while (true);//Verificar que el nombre exista y no sea igual
 
-  nodoTarea = buscarTarea(monTareas, tarea2);
-  free(nodoTarea->tareasPrecedentes);
+  queue_clear(nodoTarea->tareasPrecedentes);
   nodoTarea->tareasPrecedentes = queue_create();
   
   queue_enqueue(nodoTarea->tareasPrecedentes, tarea1);
   return;
 }
 
-void mostrarTareas(Heap *monTareas) {
+Queue *mostrarTareasPorHacer(Heap *monTareas) {
+  Heap *monAux = monTareas;
+  Heap *monParalelo = createHeap();
+  Tarea *tareaAux = NULL;
+  
+  for (unsigned int i = 0; i < heap_size(monTareas); i++){
+    tareaAux = heap_top(monAux);
+    if (tareaAux->tareasPrecedentes == NULL){
+      heap_push(monParalelo, tareaAux, tareaAux->prioridad);
+    }
+    else{
+      
+    }
+  }
+  return NULL;
 }
 
 int main() {
@@ -141,14 +162,16 @@ int main() {
     switch (opcion) {
     case 1:
       agregarTarea(monTareas);
+      printf("\nTAMAÑO SIZE: %d", heap_size(monTareas));
+      printf("\nTAMAÑO CAPACIDAD: %d", heap_capac(monTareas));
       break;
     case 2:
       agregarPrecedencia(monTareas);
       break;
     case 3:
+   //   tareasPorHacer = mostrarTareasPorHacer(monTareas);
       break;
     case 4:
-      mostrarTareas(monTareas);
       break;
     case 0:
       exit(EXIT_SUCCESS);
