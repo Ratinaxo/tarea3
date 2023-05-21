@@ -1,10 +1,9 @@
 #ifndef List_h
 #define List_h
 
-typedef struct Node Node;
 typedef struct List List;
 
-List * createList(void);
+List * createList();
 
 void * firstList(List * list);
 
@@ -25,6 +24,8 @@ void * popFront(List * list);
 void * popBack(List * list);
 
 void * popCurrent(List * list);
+
+int sizeList(List * list);
 
 void cleanList(List * list);
 
